@@ -1,5 +1,6 @@
 import os
 import subprocess
+from google.genai import types
 def run_python_file(working_directory, file_path, args=[]):
     requested_file = os.path.join(os.path.abspath(working_directory), file_path)
     try:
@@ -38,3 +39,20 @@ def run_python_file(working_directory, file_path, args=[]):
     except Exception as e:
         return f"Error: executing Python file: {e}"
 
+# Schema telling the AI how to use the function 
+schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description="Runs the specified python file with optional arguments and returns any errors and stdout",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="This is a positional argument. The python file you want to run to see its results",
+            ), "args": types.Schema(
+                type=types.Type.STRING,
+                description="This is a keyword argument. The arguments you want to pass to the python file you want to run",
+            ),
+        },
+    ),
+)

@@ -1,4 +1,5 @@
 import os
+from google.genai import types
 def write_file(working_directory, file_path, content):
     try:
         # file path of the file that will be written to or overwritten 
@@ -27,3 +28,21 @@ def write_file(working_directory, file_path, content):
     # Return error message if any standard library call fails
     except Exception as e:
         return f"Error: {e}"
+
+# Schema telling the AI how to use the function 
+schema_write_file = types.FunctionDeclaration(
+    name="write_file",
+    description="Write any content you want to the specified file",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The file you want to write any content to",
+            ), "content": types.Schema(
+                type=types.Type.STRING,
+                description="The specific content you want to write to the specified file ",
+            ),
+        },
+    ),
+)
