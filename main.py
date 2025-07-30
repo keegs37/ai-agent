@@ -21,6 +21,7 @@ When a user asks a question or makes a request, make a function call plan. You c
 - Write or overwrite files
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
+
 """
 
 # Exposing the available functions to the AI
@@ -48,35 +49,51 @@ messages = [
     types.Content(role="user", parts=[types.Part(text=user_prompt)]),
 ]
 
-# Pass user prompt to the AI model and capture the response
-response = client.models.generate_content(
-    model='gemini-2.0-flash-001', contents=messages,
-    config=types.GenerateContentConfig(tools = [available_functions], system_instruction=system_prompt)
-)
-# List for return string 
-return_string = []
-# If the AI calls a function run it and return its result, error if the function fails
-if response.function_calls:
-    for fc in response.function_calls:
-       result = call_function(fc)
-       if not result.parts[0].function_response.response:
-        raise Exception("Functioned call failed")
-       else:
-        print(f"-> {result.parts[0].function_response.response}") 
+for i in range(20):
+    try:
+        # Pass user prompt to the AI model and capture the response
+        response = client.models.generate_content(
+        model='gemini-2.0-flash-001', contents=messages,
+        config=types.GenerateContentConfig(tools = [available_functions], system_instruction=system_prompt))
+     
+        
+        # Add response variations to our conversation list "messages"
+        for candidate in response.candidates:
+            messages.append(candidate.content)
 
+        # If the AI calls a function run it and return its result, error if the function fails
+        if response.function_calls:
+            for fc in response.function_calls:
+
+                result = call_function(fc)
+                # Add the result of each function call to the conversation list "messages"
+                messages.append(result)  
+        
+                #if not result.parts[0].function_response.response:
+                    #raise Exception("Functioned call failed")
+                #else:
+                    #print(f"-> {result.parts[0].function_response.response}") 
+        else: 
+            if response.text:
+                print(response.text)
+            break
+
+    except Exception as e:
+        print(f"Error: {e}")
 # Add AI response to return_string if there is one          
 #if response.text:
     #return_string.append(response.text)
 
 # If there are no "--" flags return the AI response only
-if len(sys.argv) < 3:
-    print("\n".join(return_string))
-    sys.exit()
+#if len(sys.argv) < 3:
+    #print("\n".join(return_string))
+    #sys.exit()
+
 
 # If --verbose flag is used return more info
-if "--verbose" in sys.argv[2]:
-    return_string.append(f"User prompt: {sys.argv[1]}")
-    return_string.append(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-    return_string.append(f"Response tokens: {response.usage_metadata.candidates_token_count}")
+if "--verbose" in sys.argv:
+    print(f"User prompt: {sys.argv[1]}")
+    print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
+    print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
-print("\n".join(return_string))
+#print("\n".join(return_string))
